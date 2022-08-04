@@ -7,7 +7,6 @@ metadata:
   tags:
     - recommended
     - java
-    - grpc
 spec:
   owner: service@example.com
   type: service

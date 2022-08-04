@@ -7,6 +7,8 @@ metadata:
   tags:
     - recommended
     - java
+    - spring-boot
+
 spec:
   owner: service@example.com
   type: service

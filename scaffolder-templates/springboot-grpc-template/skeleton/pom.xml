@@ -13,7 +13,7 @@
   <groupId>com.miq</groupId>
   <artifactId>${{values.artifact_id}}</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
 
   <name>${{values.artifact_id}}</name>
   <description>${{values.description}}</description>
@@ -26,6 +26,14 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
+
+  <modules>
+    <module>${{values.destination.repo}}-client</module>
+    <module>${{values.destination.repo}}-common</module>
+    <module>${{values.destination.repo}}-integration-test</module>
+    <module>${{values.destination.repo}}-server</module>
+  </modules>
+
   <repositories>
     <repository>
       <id>jcenter</id>

@@ -22,7 +22,7 @@ resources:
 
 annotations:
   prometheus.io/scrape: "true"
-  prometheus.io/port: "1234"
+  prometheus.io/port: "${{values.http_port}}"
   prometheus.io/path: "/actuator/prometheus"
   prometheus.io/team: "${{parameters.owner}}"
   prometheus.io/product: "${{values.component_id}}_SERVICE"
@@ -31,8 +31,9 @@ annotations:
   vault.hashicorp.com/agent-pre-populate-only: "true"
   vault.hashicorp.com/auth-path: "auth/kubernetes"
   vault.hashicorp.com/role: "pt-${{values.component_id}}-pr"
-  #  Please update below value ----
-  miq.io/javautils-webhook-s3-path: "Needs to update"
+  #  Please update below value --->>>
+  miq.io/javautils-webhook-s3-path: "s3://miq-techbrew/services/dumps/${{values.component_id}}/pr"
+  #  Please update below value --->>>
   vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/${{values.component_id}}-pr"
   vault.hashicorp.com/agent-inject-template-secrets.properties: |
     {{- with secret "Platform-Vault-Kubernetes/data/${{values.component_id}}-pr" }}

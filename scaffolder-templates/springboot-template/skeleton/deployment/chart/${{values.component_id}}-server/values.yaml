@@ -43,8 +43,9 @@ annotations:
   vault.hashicorp.com/agent-init-first: "true"
   miq.io/javautils-webhook-enabled: "true"
   #  Please update below value --->>>
-  miq.io/javautils-webhook-s3-path: "Need to update"
+  miq.io/javautils-webhook-s3-path: "s3://miq-dev-techbrew/services/dumps/${{values.component_id}}/integration"
   miq.io/javautils-webhook-application-container: ${{values.component_id}}
+  #  Please update below value --->>>
   iam.amazonaws.com/role: techbrew-services-shared-role
 
 resources:

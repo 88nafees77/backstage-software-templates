@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: 836079437595.dkr.ecr.us-east-1.amazonaws.com/platform-services
-  tag: userprofile-core
+  tag: ${{values.component_id}}-server
   pullPolicy: Always
 
 nameOverride: ""
@@ -24,17 +24,18 @@ annotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "1234"
   prometheus.io/path: "/actuator/prometheus"
-  prometheus.io/team: "PLATFORMSERVICES"
-  prometheus.io/product: "USERPROFILE_SERVICE"
-  prometheus.io/service: "USERPROFILE_SERVER"
+  prometheus.io/team: "${{parameters.owner}}"
+  prometheus.io/product: "${{values.component_id}}_SERVICE"
+  prometheus.io/service: "${{values.component_id}}_SERVER"
   prometheus.io/env: "PR"
   vault.hashicorp.com/agent-pre-populate-only: "true"
   vault.hashicorp.com/auth-path: "auth/kubernetes"
-  vault.hashicorp.com/role: "pt-userprofile-pr"
-  miq.io/javautils-webhook-s3-path: "s3://miq-dev-techbrew/services/dumps/user-profile/pr"
-  vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/userprofile-pr"
+  vault.hashicorp.com/role: "pt-${{values.component_id}}-pr"
+  #  Please update below value ----
+  miq.io/javautils-webhook-s3-path: "Needs to update"
+  vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/${{values.component_id}}-pr"
   vault.hashicorp.com/agent-inject-template-secrets.properties: |
-    {{- with secret "Platform-Vault-Kubernetes/data/userprofile-pr" }}
+    {{- with secret "Platform-Vault-Kubernetes/data/${{values.component_id}}-pr" }}
       {{ range $k, $v := .Data.data }}
       {{- $k }}={{ $v }}
       {{ end }}
@@ -54,7 +55,7 @@ affinity:
           - key: app.kubernetes.io/instance
             operator: In
             values:
-            - userprofile-pr
+              - ${{values.component_id}}-pr
         topologyKey: "failure-domain.beta.kubernetes.io/zone"
 
 timestamp: A100
@@ -62,4 +63,4 @@ timestamp: A100
 config:
   spring:
     application:
-      name: userprofile-service-pr
+      name: ${{values.component_id}}-service-pr

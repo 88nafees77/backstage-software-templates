@@ -2,7 +2,7 @@
 kind: VirtualService
 apiVersion: networking.istio.io/v1alpha3
 metadata:
-  name: {{ include "userprofile.fullname" . }}-istio-vs
+  name: {{ include "${{values.component_id}}.fullname" . }}-istio-vs
   namespace: {{ .Values.istio.namespace }}
 spec:
   hosts:

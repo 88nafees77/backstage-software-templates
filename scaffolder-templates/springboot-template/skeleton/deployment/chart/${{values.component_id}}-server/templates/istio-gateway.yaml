@@ -2,7 +2,7 @@
 kind: Gateway
 apiVersion: networking.istio.io/v1alpha3
 metadata:
-  name: {{ include "userprofile.fullname" . }}-istio-gw
+  name: {{ include "${{values.component_id}}.fullname" . }}-istio-gw
   namespace: {{ .Values.istio.namespace }}
 spec:
   selector:

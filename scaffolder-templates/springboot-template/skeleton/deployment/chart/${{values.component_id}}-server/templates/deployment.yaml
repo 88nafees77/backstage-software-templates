@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "userprofile.fullname" . }}
+  name: {{ include "${{values.component_id}}.fullname" . }}
   labels:
-{{ include "userprofile.labels" . | indent 4 }}
+{{ include "${{values.component_id}}.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   strategy:
@@ -13,12 +13,12 @@ spec:
       maxSurge: 50%
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "userprofile.name" . }}
+      app.kubernetes.io/name: {{ include "${{values.component_id}}.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "userprofile.name" . }}
+        app.kubernetes.io/name: {{ include "${{values.component_id}}.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
         sidecar.istio.io/inject: "{{ .Values.istio.enabled }}"
       {{- with .Values.annotations }}
@@ -29,7 +29,7 @@ spec:
       volumes:
         - name: app-config
           configMap:
-            name: {{ template "userprofile.fullname" . }}-configuration
+            name: {{ template "${{values.component_id}}.fullname" . }}-configuration
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -50,7 +50,7 @@ spec:
               mountPath: /usr/.config/app-config
           envFrom:
             - configMapRef:
-                name: {{ template "userprofile.fullname" . }}-environment
+                name: {{ template "${{values.component_id}}.fullname" . }}-environment
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
             httpGet:

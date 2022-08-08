@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "userprofile.fullname" . }}-configuration
+  name: {{ include "${{values.component_id}}.fullname" . }}-configuration
   labels:
-    app.kubernetes.io/name: {{ include "userprofile.name" . }}
-    helm.sh/chart: {{ include "userprofile.chart" . }}
+    app.kubernetes.io/name: {{ include "${{values.component_id}}.name" . }}
+    helm.sh/chart: {{ include "${{values.component_id}}.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
@@ -13,10 +13,10 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "userprofile.fullname" . }}-environment
+  name: {{ include "${{values.component_id}}.fullname" . }}-environment
   labels:
-    app.kubernetes.io/name: {{ include "userprofile.name" . }}
-    helm.sh/chart: {{ include "userprofile.chart" . }}
+    app.kubernetes.io/name: {{ include "${{values.component_id}}.name" . }}
+    helm.sh/chart: {{ include "${{values.component_id}}.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:

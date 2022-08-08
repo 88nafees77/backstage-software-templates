@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: 230367374156.dkr.ecr.us-east-1.amazonaws.com/platform-services
-  tag: userprofile-core
+  tag: ${{values.component_id}}-server
   pullPolicy: Always
 
 imagePullSecrets: []
@@ -44,16 +44,16 @@ annotations:
   prometheus.io/port: "1234"
   prometheus.io/path: "/actuator/prometheus"
   prometheus.io/team: "PLATFORMSERVICES"
-  prometheus.io/product: "USERPROFILE_SERVICE"
-  prometheus.io/service: "USERPROFILE_SERVER"
+  prometheus.io/product: "${{values.component_id}}-server_SERVICE"
+  prometheus.io/service: "${{values.component_id}}-server_SERVER"
   prometheus.io/env: "PRODUCTION"
   miq.io/javautils-webhook-s3-path: "s3://miq-techbrew/services/dumps/user-profile/production"
   vault.hashicorp.com/agent-pre-populate-only: "true"
   vault.hashicorp.com/auth-path: "auth/kubernetes-prod"
-  vault.hashicorp.com/role: "pt-userprofile-production"
-  vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/userprofile-production"
+  vault.hashicorp.com/role: "pt-${{values.component_id}}-server-production"
+  vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/${{values.component_id}}-server-production"
   vault.hashicorp.com/agent-inject-template-secrets.properties: |
-    {{- with secret "Platform-Vault-Kubernetes/data/userprofile-production" }}
+    {{- with secret "Platform-Vault-Kubernetes/data/${{values.component_id}}-server-production" }}
       {{ range $k, $v := .Data.data }}
       {{- $k }}={{ $v }}
       {{ end }}
@@ -73,7 +73,7 @@ affinity:
               - key: app.kubernetes.io/instance
                 operator: In
                 values:
-                  - userprofile-production
+                  - ${{values.component_id}}-server-production
           topologyKey: "failure-domain.beta.kubernetes.io/zone"
 
 timestamp: A100
@@ -81,23 +81,13 @@ timestamp: A100
 config:
   spring:
     application:
-      name: userprofile-production
-    main:
-      allow_circular_references: true
-    cloud:
-      compatibility_verifier:
-        enabled: false
-    zipkin:
-      enabled: false
-      base_url: http://jaeger-prod-collector.pt-observability.svc:9411/
-  application:
-    trackingTagsUrl: "https://api-gateway.prod.miqdigital.com/trackingtagsvalidation/v1"
+      name: ${{values.component_id}}-server-production
 
 istio:
-  enabled: true
-  namespace: pt-userprofile-production
+  enabled: false
+  namespace: pt-${{values.component_id}}-production
   #  make sure to add this host in gateway
-  host: userprofile.prod.miqdigital.com
-  gateway: pt-userprofile-production/userprofile-production-istio-gw
-  destinationHost: userprofile-production
+  host: ${{values.component_id}}.prod.miqdigital.com
+  gateway: pt-${{values.component_id}}-production/${{values.component_id}}-production-istio-gw
+  destinationHost: ${{values.component_id}}-production
   destinationPort: 80

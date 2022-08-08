@@ -1,0 +1,14 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.miq</groupId>
+    <artifactId>${{values.artifact_id}}</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <artifactId>${{values.component_id}}-server</artifactId>
+  <name>${{values.component_id}}-server</name>
+  <description>test</description>
+</project>

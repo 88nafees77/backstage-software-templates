@@ -1,0 +1,65 @@
+replicaCount: 2
+
+image:
+  repository: 836079437595.dkr.ecr.us-east-1.amazonaws.com/platform-services
+  tag: userprofile-core
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 2Gi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "1234"
+  prometheus.io/path: "/actuator/prometheus"
+  prometheus.io/team: "PLATFORMSERVICES"
+  prometheus.io/product: "USERPROFILE_SERVICE"
+  prometheus.io/service: "USERPROFILE_SERVER"
+  prometheus.io/env: "PR"
+  vault.hashicorp.com/agent-pre-populate-only: "true"
+  vault.hashicorp.com/auth-path: "auth/kubernetes"
+  vault.hashicorp.com/role: "pt-userprofile-pr"
+  miq.io/javautils-webhook-s3-path: "s3://miq-dev-techbrew/services/dumps/user-profile/pr"
+  vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/userprofile-pr"
+  vault.hashicorp.com/agent-inject-template-secrets.properties: |
+    {{- with secret "Platform-Vault-Kubernetes/data/userprofile-pr" }}
+      {{ range $k, $v := .Data.data }}
+      {{- $k }}={{ $v }}
+      {{ end }}
+    {{- end }}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/instance
+            operator: In
+            values:
+            - userprofile-pr
+        topologyKey: "failure-domain.beta.kubernetes.io/zone"
+
+timestamp: A100
+
+config:
+  spring:
+    application:
+      name: userprofile-service-pr

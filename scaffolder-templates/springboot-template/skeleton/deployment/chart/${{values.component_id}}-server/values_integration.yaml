@@ -1,0 +1,68 @@
+replicaCount: 2
+
+image:
+  repository: 836079437595.dkr.ecr.us-east-1.amazonaws.com/platform-services
+  tag: ${{values.component_id}}-server
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 2Gi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "1234"
+  prometheus.io/path: "/actuator/prometheus"
+  prometheus.io/team: "PLATFORMSERVICES"
+  prometheus.io/product: "'${{values.component_id}}'"
+  prometheus.io/service: "'${{values.component_id}}'"
+  prometheus.io/env: "INTEGRATION"
+  vault.hashicorp.com/agent-pre-populate-only: "true"
+  vault.hashicorp.com/auth-path: "auth/kubernetes"
+  #  please create your namespace with below value---
+  vault.hashicorp.com/role: "pt-${{values.component_id}}-integration"
+  vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/${{values.component_id}}-integration"
+  vault.hashicorp.com/agent-inject-template-secrets.properties: |
+    {{- with secret "Platform-Vault-Kubernetes/data/${{values.component_id}}-integration" }}
+      {{ range $k, $v := .Data.data }}
+      {{- $k }}={{ $v }}
+      {{ end }}
+    {{- end }}
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/instance
+                operator: In
+                values:
+                  - ${{values.component_id}}-integration
+          topologyKey: "failure-domain.beta.kubernetes.io/zone"
+
+timestamp: A100
+
+istio:
+  enabled: false
+
+config:
+  spring:
+    application:
+      name: ${{values.component_id}}-integration

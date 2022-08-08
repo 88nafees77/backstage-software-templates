@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "userprofile.fullname" . }}-configuration
+  labels:
+    app.kubernetes.io/name: {{ include "userprofile.name" . }}
+    helm.sh/chart: {{ include "userprofile.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  {{- (tpl (.Files.Glob "config/*").AsConfig . ) | nindent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "userprofile.fullname" . }}-environment
+  labels:
+    app.kubernetes.io/name: {{ include "userprofile.name" . }}
+    helm.sh/chart: {{ include "userprofile.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+{{ toYaml .Values.env | indent 2 }}

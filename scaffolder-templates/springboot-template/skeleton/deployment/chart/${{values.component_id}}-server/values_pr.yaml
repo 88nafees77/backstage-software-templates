@@ -30,7 +30,7 @@ annotations:
   prometheus.io/env: "PR"
   vault.hashicorp.com/agent-pre-populate-only: "true"
   vault.hashicorp.com/auth-path: "auth/kubernetes"
-  vault.hashicorp.com/role: "pt-${{values.component_id}}-pr"
+  vault.hashicorp.com/role: "${{values.kube_namespace}}"
   #  Please update below value --->>>
   miq.io/javautils-webhook-s3-path: "s3://miq-techbrew/services/dumps/${{values.component_id}}/pr"
   #  Please update below value --->>>

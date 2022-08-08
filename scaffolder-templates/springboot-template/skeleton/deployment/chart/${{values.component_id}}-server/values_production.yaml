@@ -51,7 +51,7 @@ annotations:
   miq.io/javautils-webhook-s3-path: "s3://miq-techbrew/services/dumps/${{values.component_id}}/production"
   vault.hashicorp.com/agent-pre-populate-only: "true"
   vault.hashicorp.com/auth-path: "auth/kubernetes-prod"
-  vault.hashicorp.com/role: "pt-${{values.component_id}}-production"
+  vault.hashicorp.com/role: "${{values.kube_namespace}}"
   #  Please update below value --->>>
   vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/${{values.component_id}}-server-production"
   vault.hashicorp.com/agent-inject-template-secrets.properties: |
@@ -87,7 +87,7 @@ config:
 
 istio:
   enabled: false
-  namespace: pt-${{values.component_id}}-production
+  namespace: ${{values.kube_namespace}}
   #  make sure to add this host in gateway
   host: ${{values.component_id}}.prod.miqdigital.com
   gateway: pt-${{values.component_id}}-production/${{values.component_id}}-production-istio-gw

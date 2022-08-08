@@ -43,15 +43,15 @@ annotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "${{values.http_port}}"
   prometheus.io/path: "/actuator/prometheus"
-  prometheus.io/team: "${{values.owner}}"
-  prometheus.io/product: upper "${{values.component_id}}_SERVICE"
-  prometheus.io/service: upper "${{values.component_id}}_SERVER"
+  prometheus.io/team: "${{values.owner | upper}}"
+  prometheus.io/product: "${{values.component_id | upper}}_SERVICE"
+  prometheus.io/service: "${{values.component_id | upper}}_SERVER"
   prometheus.io/env: "PRODUCTION"
   #  Please update below value --->>>
   miq.io/javautils-webhook-s3-path: "s3://miq-techbrew/services/dumps/${{values.component_id}}/production"
   vault.hashicorp.com/agent-pre-populate-only: "true"
   vault.hashicorp.com/auth-path: "auth/kubernetes-prod"
-  vault.hashicorp.com/role: "pt-${{values.component_id}}-server-production"
+  vault.hashicorp.com/role: "pt-${{values.component_id}}-production"
   #  Please update below value --->>>
   vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/${{values.component_id}}-server-production"
   vault.hashicorp.com/agent-inject-template-secrets.properties: |

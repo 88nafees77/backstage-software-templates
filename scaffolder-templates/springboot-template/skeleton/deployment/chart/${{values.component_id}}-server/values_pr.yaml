@@ -24,7 +24,7 @@ annotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "${{values.http_port}}"
   prometheus.io/path: "/actuator/prometheus"
-  prometheus.io/team: "${{parameters.owner}}"
+  prometheus.io/team: "${{values.owner}}"
   prometheus.io/product: "${{values.component_id}}_SERVICE"
   prometheus.io/service: "${{values.component_id}}_SERVER"
   prometheus.io/env: "PR"

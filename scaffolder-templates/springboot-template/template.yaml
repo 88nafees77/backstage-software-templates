@@ -17,7 +17,6 @@ spec:
         - component_id
         - owner
         - java_package_name
-        - kube_namespace
       properties:
         component_id:
           title: Name
@@ -31,7 +30,22 @@ spec:
         kube_namespace:
           title: Kubernetes Namespace
           type: string
-          description: Unique name of the Kubernetes Namespace
+          description: Enter your kube namespace, *dont include Env name with namespace*
+          ui:field: EntityNamePicker
+        vault_role:
+          title: Vault Role
+          type: string
+          description: Enter value for vault.hashicorp.com/role
+          ui:field: EntityNamePicker
+        vault_secret_file:
+          title: Vault Secret File Path
+          type: string
+          description: Enter value for vault.hashicorp.com/agent-inject-secret-secrets.properties
+          ui:field: EntityNamePicker
+        aws_role:
+          title: AWS Role
+          type: string
+          description: Enter value for iam.amazonaws.com/role
           ui:field: EntityNamePicker
         description:
           title: Description
@@ -73,6 +87,9 @@ spec:
           owner: ${{ parameters.owner }}
           destination: ${{ parameters.repoUrl | parseRepoUrl }}
           kube_namespace: ${{ parameters.kube_namespace }}
+          vault_role: ${{ parameters.vault_role }}
+          vault_secret_file: ${{ parameters.vault_secret_file }}
+          aws_role: ${{ parameters.aws_role }}
           http_port: 8080
 
     - id: publish

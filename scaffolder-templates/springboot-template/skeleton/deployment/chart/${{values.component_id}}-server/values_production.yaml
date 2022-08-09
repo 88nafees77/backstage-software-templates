@@ -47,15 +47,14 @@ annotations:
   prometheus.io/product: "${{values.component_id | upper}}_SERVICE"
   prometheus.io/service: "${{values.component_id | upper}}_SERVER"
   prometheus.io/env: "PRODUCTION"
-  #  Please update below value --->>>
-  miq.io/javautils-webhook-s3-path: "s3://miq-techbrew/services/dumps/${{values.component_id}}/production"
+  #  please update your S3 path
+  miq.io/javautils-webhook-s3-path: ""
   vault.hashicorp.com/agent-pre-populate-only: "true"
   vault.hashicorp.com/auth-path: "auth/kubernetes-prod"
-  vault.hashicorp.com/role: "${{values.kube_namespace}}"
-  #  Please update below value --->>>
-  vault.hashicorp.com/agent-inject-secret-secrets.properties: "Platform-Vault-Kubernetes/data/${{values.component_id}}-server-production"
+  vault.hashicorp.com/role: "${{values.vault_role}}-production"
+  vault.hashicorp.com/agent-inject-secret-secrets.properties: "${{values.vault_secret_file}}-production"
   vault.hashicorp.com/agent-inject-template-secrets.properties: |
-    {{- with secret "Platform-Vault-Kubernetes/data/${{values.component_id}}-server-production" }}
+    {{- with secret "${{values.vault_secret_file}}-production" }}
       {{ range $k, $v := .Data.data }}
       {{- $k }}={{ $v }}
       {{ end }}
@@ -83,7 +82,7 @@ timestamp: A100
 config:
   spring:
     application:
-      name: ${{values.component_id}}-server-production
+      name: ${{values.component_id}}-service-production
 
 istio:
   enabled: false

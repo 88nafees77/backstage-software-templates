@@ -41,11 +41,16 @@ service:
 annotations:
   vault.hashicorp.com/agent-inject: "true"
   vault.hashicorp.com/agent-init-first: "true"
+#  by default should false
   miq.io/javautils-webhook-enabled: "true"
   #  Please update below value --->>>
-  miq.io/javautils-webhook-s3-path: ""
+  #  Input from user
+  miq.io/javautils-webhook-s3-path: "s3://miq-dev-techbrew/services/dumps/user-profile/integration"
   miq.io/javautils-webhook-application-container: ${{values.component_id}}
+  #  Input from user
+  miq.io/javautils-webhook-dump-path: "/opt/dumps/"
   #  Please update below value --->>>
+  #  Input from user
   iam.amazonaws.com/role: ""
 
 resources:

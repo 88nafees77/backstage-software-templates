@@ -1,0 +1,237 @@
+@Library('jsl') _
+
+def buildNumber = ''
+def imageTag = ''
+
+def runIntegrationTests(String environment) {
+  sh """
+   echo "running integration tests"
+   pushd userprofile-integration-test
+   mvn verify ${MVN_SETTING} -Denv=${environment} -Dmaven.test.skip=false
+   popd
+   """
+}
+
+def runComponentTestsWithCodeCoverage(String environment) {
+  withCredentials([string(credentialsId: 'USER_PROFILE_GMAIL_CLIENT_SECRET', variable: 'USER_PROFILE_GMAIL_CLIENT_SECRET')]){
+      sh """
+       echo "running integration tests"
+       pushd userprofile-integration-test
+       mvn verify -PCTCodeCoverage ${MVN_SETTING} -Denv=pr -Dmaven.test.skip=false
+       popd
+       """
+   }
+   common.automation_test_ct_code_coverage("user-profile", "userprofile-integration-test/target/site/jacoco-ct/jacoco.csv")
+   publishCoverage adapters: [jacocoAdapter('userprofile-integration-test/target/site/jacoco-ct/jacoco.xml')]
+}
+
+def tagAndPushToProd(String source_ecr, String dest_ecr, String tag) {
+    sh 'docker tag ' + source_ecr + ':' + tag + ' ' + dest_ecr + ':' + tag
+    common.dockerpushImagesProd('prod', tag, dest_ecr)
+}
+
+def getBranchName() {
+  if (common.get_pullrequest() == "nopullrequest") {
+    return env.BRANCH_NAME
+  }
+  return env.CHANGE_BRANCH
+}
+
+def deployJar(String projectName) {
+    sh '''
+    cd ''' + projectName + '''
+    mvn ${MVN_SETTING} deploy
+    '''
+} 
+
+def isPullRequest(String branchName){
+    if(common.get_pullrequest() == branchName){
+        return 'true'
+    }
+    return 'false'
+}
+
+def isPushToBranch(String branchName){
+    if(common.get_pullrequest() == "nopullrequest" && getBranchName() == branchName){
+        return 'true'
+    }
+    return 'false'
+}
+
+pipeline {
+  agent any
+  tools {
+    maven 'maven3.6.3'
+    jdk 'JAVA17'
+    nodejs 'node_16'
+  }
+  environment {
+    IS_PULL_REQUEST=isPullRequest("master")
+    IS_COMMIT_TRUNK=isPushToBranch("master")
+    CURR_BRANCH_NAME=getBranchName()
+    ECRURL_DEV = "836079437595.dkr.ecr.us-east-1.amazonaws.com/platform-services"
+    ECRURL_PROD = "230367374156.dkr.ecr.us-east-1.amazonaws.com/platform-services"
+    MVN_SETTING = "-s $JENKINS_HOME/.m2/platform_settings.xml -Dsettings.security=$JENKINS_HOME/.m2/settings-security.xml"
+    NEXUS_URL = "https://build.dev.miqdigital.com/nexus/content/repositories/releases/"
+  }
+  options {
+      disableConcurrentBuilds()
+      buildDiscarder(logRotator(numToKeepStr:'10'))
+      skipStagesAfterUnstable()
+      parallelsAlwaysFailFast()
+      timeout(time: 1, unit: 'HOURS')
+  }
+  stages {
+    stage('Start Release'){
+        when { environment name: 'IS_COMMIT_TRUNK', value: 'true' }
+        steps {
+            script {
+                common.start_release('wiki/CHANGELOG.md')
+            }
+        }
+    }
+    stage('Build & Unit Test') {
+        when{
+            anyOf {
+                environment name: 'IS_PULL_REQUEST', value: 'true'
+                environment name: 'IS_COMMIT_TRUNK', value: 'true'
+            }
+        }
+      steps {
+        scmSkip(deleteBuild: false, skipPattern:'.*\\[ci skip\\].*')
+        script {
+            version = sh(returnStdout: true, script: 'git describe --tags --abbrev=0').toString().trim()
+            if(env.IS_PULL_REQUEST == 'true'){
+                buildNumber = '-' + env.BUILD_NUMBER
+                version = 'unstable-' + version
+            }
+            common.dev_account_ecr_login()
+            sh "mvn ${MVN_SETTING} clean install -Drelease.tag=${version} -Dbuild.number=${buildNumber}"
+            imageTag = 'userprofile-core-' + version + buildNumber
+            common.trivyScan(imageTag, env.ECRURL_DEV, 'CRITICAL')
+            common.dockerpushImagesDev('optional', imageTag, env.ECRURL_DEV)
+        }
+      }
+    }
+    stage('Sonar Analysis & Quality Gate') {
+        when{
+            anyOf {
+                environment name: 'IS_PULL_REQUEST', value: 'true'
+                environment name: 'IS_COMMIT_TRUNK', value: 'true'
+            }
+        }
+        steps {
+            script {
+                if(env.IS_PULL_REQUEST == 'true'){
+                    sh "git fetch --no-tags git@bitbucket.org:mediaiq/user-profile.git +refs/heads/${CHANGE_TARGET}:refs/remotes/origin/${CHANGE_TARGET}"
+                    withSonarQubeEnv('SonarCloud') {
+                        sh '''
+                        pushd userprofile-core
+                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_user-profile_core -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}
+                        popd '''
+                        sh'''
+                        pushd userprofile-client
+                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_user-profile_client -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}
+                        popd '''
+                    }
+                    timeout(time: 10, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: true
+                    }
+                } else if(env.IS_COMMIT_TRUNK == 'true'){
+                    withSonarQubeEnv('SonarCloud') {
+                        sh '''
+                        pushd userprofile-core
+                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_user-profile_core -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.branch.name=master
+                        popd'''
+                        sh'''
+                        pushd userprofile-client
+                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_user-profile_client -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.branch.name=master
+                        popd'''
+                    }
+                }
+            }
+        }
+    }
+
+    stage('Test'){
+        parallel {
+            stage('Component Tests') {
+                when{
+                    anyOf {
+                        environment name: 'IS_PULL_REQUEST', value: 'true'
+                        environment name: 'IS_COMMIT_TRUNK', value: 'true'
+                    }
+                }
+                steps {
+                    script {
+                        runComponentTestsWithCodeCoverage('pr')
+                        }
+                    }
+            }
+            stage('Count coverage') {
+            when{ environment name: 'IS_COMMIT_TRUNK', value: 'true' }
+                steps {
+                    script {
+                       sh '''
+                       echo 'Running coverage script'
+                       '''
+                       common.automation_test_count_coverage("user-profile")
+                       }
+                    }
+                }
+            stage('Integration Deployment & Tests') {
+                when{ environment name: 'IS_COMMIT_TRUNK', value: 'true' }
+                steps {
+                    script {
+                        def additionalArgs = '--wait '+ '--set image.tag=' + imageTag
+                        common.kube_helm3_deploy('integration', 'pt-userprofile-integration', 'userprofile', 'deployment/chart', 'eks-develop', additionalArgs)
+                        runIntegrationTests('integration')
+                    }
+                }
+            }
+        }
+    }
+    stage('Release Artifacts') {
+        when{ environment name: 'IS_COMMIT_TRUNK', value: 'true' }
+        steps {
+            script {
+                tagAndPushToProd(env.ECRURL_DEV, env.ECRURL_PROD, imageTag)
+                common.finish_release()
+                common.docs_deploy('PLATFORMSERVICES','UserProfileService','prod','wiki')
+                def pomVersion = readMavenPom().getVersion()
+                deployJar("userprofile-client")
+            }
+        }
+    }
+  }
+  post {
+    success {
+      script {
+          common.trigger_downstream_deployment_metrics('platform-UserProfileService-pipeline', 'Success', env.JOB_BASE_NAME)
+      }
+    }
+    failure {
+      emailext (
+               subject: "Failed userprofile-service Deployment of job name: ${env.CURR_BRANCH_NAME}",
+               to: 'platform-techbrew-team@miqdigital.com',
+               body: "Check console output at ${env.BUILD_URL}",
+           )
+      script {
+        common.trigger_downstream_deployment_metrics('platform-UserProfileService-pipeline', 'Failed', env.JOB_BASE_NAME)
+      }
+    }
+    always {
+          cleanWs()
+    }
+    unstable {
+      emailext (
+               subject: "Failed userprofile-service Deployment of ${env.CURR_BRANCH_NAME}",
+               to: 'platform-techbrew-team@miqdigital.com',
+               body: "Check console output at ${env.BUILD_URL}",
+           )
+      script {
+        common.trigger_downstream_deployment_metrics('platform-UserProfile-pipeline', 'Failed', env.JOB_BASE_NAME)
+      }
+    }
+  }
+}

@@ -197,7 +197,7 @@ pipeline {
             script {
                 tagAndPushToProd(env.ECRURL_DEV, env.ECRURL_PROD, imageTag)
                 common.finish_release()
-                common.docs_deploy('${{values.owner | upper}}','${{values.component_id}}Service','prod','wiki')
+                common.docs_deploy('${{values.owner | upper}}','${{values.component_id | title}}','prod','wiki')
                 def pomVersion = readMavenPom().getVersion()
                 deployJar("${{values.component_id}}-client")
             }

@@ -37,10 +37,15 @@ spec:
           type: string
           description: Enter value for vault.hashicorp.com/role
           ui:field: EntityNamePicker
-        vault_secret_file:
-          title: Vault Secret File Path
+        vault_secret_folder_name:
+          title: Vault Secret Folder Name
           type: string
-          description: Enter value for vault.hashicorp.com/agent-inject-secret-secrets.properties
+          description: Enter value for vault.hashicorp.com/agent-inject-secret-secrets.properties, eg (Platform-Vault-Kubernetes)
+          ui:field: EntityNamePicker
+        vault_secret_file_name:
+          title: Vault Secret File Name
+          type: string
+          description: Enter value for vault.hashicorp.com/agent-inject-secret-secrets.properties, *contact devops teams to create the same on vault*
           ui:field: EntityNamePicker
         aws_role:
           title: AWS Role
@@ -88,7 +93,8 @@ spec:
           destination: ${{ parameters.repoUrl | parseRepoUrl }}
           kube_namespace: ${{ parameters.kube_namespace }}
           vault_role: ${{ parameters.vault_role }}
-          vault_secret_file: ${{ parameters.vault_secret_file }}
+          vault_secret_folder_name: ${{ parameters.vault_secret_folder_name }}
+          vault_secret_file_name: ${{ parameters.vault_secret_file_name }}
           aws_role: ${{ parameters.aws_role }}
           http_port: 8080
 

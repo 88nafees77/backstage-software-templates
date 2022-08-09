@@ -31,9 +31,9 @@ annotations:
   vault.hashicorp.com/agent-pre-populate-only: "true"
   vault.hashicorp.com/auth-path: "auth/kubernetes"
   vault.hashicorp.com/role: "${{values.vault_role}}-integration"
-  vault.hashicorp.com/agent-inject-secret-secrets.properties: "${{values.vault_secret_file}}-integration"
+  vault.hashicorp.com/agent-inject-secret-secrets.properties: "${{values.vault_secret_folder_name}}/data/${{values.vault_secret_file_name}}-integration"
   vault.hashicorp.com/agent-inject-template-secrets.properties: |
-    {{- with secret "${{values.vault_secret_file}}-integration" }}
+    {{- with secret "${{values.vault_secret_folder_name}}/data/${{values.vault_secret_file_name}}-integration" }}
       {{ range $k, $v := .Data.data }}
       {{- $k }}={{ $v }}
       {{ end }}

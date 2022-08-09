@@ -32,9 +32,9 @@ annotations:
   vault.hashicorp.com/auth-path: "auth/kubernetes"
   vault.hashicorp.com/role: "${{values.vault_role}}-pr"
   miq.io/javautils-webhook-s3-path: ""
-  vault.hashicorp.com/agent-inject-secret-secrets.properties: "${{values.vault_secret_file}}-pr"
+  vault.hashicorp.com/agent-inject-secret-secrets.properties: "${{values.vault_secret_folder_name}}/data/${{values.vault_secret_file_name}}-pr"
   vault.hashicorp.com/agent-inject-template-secrets.properties: |
-    {{- with secret "${{values.vault_secret_file}}-pr" }}
+    {{- with secret "${{values.vault_secret_folder_name}}/data/${{values.vault_secret_file_name}}-pr" }}
       {{ range $k, $v := .Data.data }}
       {{- $k }}={{ $v }}
       {{ end }}

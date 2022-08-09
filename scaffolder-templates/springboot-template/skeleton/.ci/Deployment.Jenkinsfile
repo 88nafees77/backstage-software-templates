@@ -9,7 +9,7 @@ pipeline {
 
   environment {
     ProjectName = "user-profile"
-    Team = "TechBrew"
+    Team = "${{values.owner}}"
     ProjectKey = "TB"
     Assignee = "rohit"
     Cmr_id = "${env.Team}/${env.ProjectName}"
@@ -31,7 +31,7 @@ pipeline {
            }
         }
       }
-     stage('Jira Ticket Status Polling') {  
+     stage('Jira Ticket Status Polling') {
       steps {
         script{
            common.jira_cmr_status_approval_poll(env.Version, env.Cmr_id, 'release')
@@ -44,8 +44,8 @@ pipeline {
             try {
                 common.notifyBuild('STARTED',env.BuildStatusNotifyChannel, env.Team, env.ProjectName, env.Current_tag)
                 def imageTag = 'userprofile-core-' + env.Current_tag
-                def additionalArgs = '--wait --history-max 10 --set image.tag=' + imageTag     
-                common.kube_helm3_deploy('production', 'pt-userprofile-production' , 'userprofile', 'deployment/chart', 'eks-production', additionalArgs)          
+                def additionalArgs = '--wait --history-max 10 --set image.tag=' + imageTag
+                common.kube_helm3_deploy('production', 'pt-userprofile-production' , 'userprofile', 'deployment/chart', 'eks-production', additionalArgs)
             }catch (e) {
            // If there was an exception thrown, the build failed
              currentBuild.result = "FAILED"

@@ -6,23 +6,23 @@ def imageTag = ''
 def runIntegrationTests(String environment) {
   sh """
    echo "running integration tests"
-   pushd userprofile-integration-test
+   pushd ${{values.component_id}}-integration-test
    mvn verify ${MVN_SETTING} -Denv=${environment} -Dmaven.test.skip=false
    popd
    """
 }
 
 def runComponentTestsWithCodeCoverage(String environment) {
-  withCredentials([string(credentialsId: 'USER_PROFILE_GMAIL_CLIENT_SECRET', variable: 'USER_PROFILE_GMAIL_CLIENT_SECRET')]){
+  withCredentials([string(credentialsId: '', variable: '')]){
       sh """
        echo "running integration tests"
-       pushd userprofile-integration-test
+       pushd ${{values.component_id}}-integration-test
        mvn verify -PCTCodeCoverage ${MVN_SETTING} -Denv=pr -Dmaven.test.skip=false
        popd
        """
    }
-   common.automation_test_ct_code_coverage("user-profile", "userprofile-integration-test/target/site/jacoco-ct/jacoco.csv")
-   publishCoverage adapters: [jacocoAdapter('userprofile-integration-test/target/site/jacoco-ct/jacoco.xml')]
+   common.automation_test_ct_code_coverage("${{values.component_id}}", "${{values.component_id}}-integration-test/target/site/jacoco-ct/jacoco.csv")
+   publishCoverage adapters: [jacocoAdapter('${{values.component_id}}-integration-test/target/site/jacoco-ct/jacoco.xml')]
 }
 
 def tagAndPushToProd(String source_ecr, String dest_ecr, String tag) {
@@ -42,7 +42,7 @@ def deployJar(String projectName) {
     cd ''' + projectName + '''
     mvn ${MVN_SETTING} deploy
     '''
-} 
+}
 
 def isPullRequest(String branchName){
     if(common.get_pullrequest() == branchName){
@@ -68,9 +68,9 @@ pipeline {
   environment {
     IS_PULL_REQUEST=isPullRequest("master")
     IS_COMMIT_TRUNK=isPushToBranch("master")
-    CURR_BRANCH_NAME=getBranchName()
-    ECRURL_DEV = "836079437595.dkr.ecr.us-east-1.amazonaws.com/platform-services"
-    ECRURL_PROD = "230367374156.dkr.ecr.us-east-1.amazonaws.com/platform-services"
+    CURR_BRANCH_NAME=getBranchName()//EcrRepo
+    ECRURL_DEV = "836079437595.dkr.ecr.us-east-1.amazonaws.com/${{values.ecr_repo}}"
+    ECRURL_PROD = "230367374156.dkr.ecr.us-east-1.amazonaws.com/${{values.ecr_repo}}"
     MVN_SETTING = "-s $JENKINS_HOME/.m2/platform_settings.xml -Dsettings.security=$JENKINS_HOME/.m2/settings-security.xml"
     NEXUS_URL = "https://build.dev.miqdigital.com/nexus/content/repositories/releases/"
   }
@@ -107,7 +107,7 @@ pipeline {
             }
             common.dev_account_ecr_login()
             sh "mvn ${MVN_SETTING} clean install -Drelease.tag=${version} -Dbuild.number=${buildNumber}"
-            imageTag = 'userprofile-core-' + version + buildNumber
+            imageTag = '${{values.component_id}}-' + version + buildNumber
             common.trivyScan(imageTag, env.ECRURL_DEV, 'CRITICAL')
             common.dockerpushImagesDev('optional', imageTag, env.ECRURL_DEV)
         }
@@ -123,15 +123,15 @@ pipeline {
         steps {
             script {
                 if(env.IS_PULL_REQUEST == 'true'){
-                    sh "git fetch --no-tags git@bitbucket.org:mediaiq/user-profile.git +refs/heads/${CHANGE_TARGET}:refs/remotes/origin/${CHANGE_TARGET}"
+                    sh "git fetch --no-tags git@bitbucket.org:mediaiq/${{values.destination.repo}}.git +refs/heads/${CHANGE_TARGET}:refs/remotes/origin/${CHANGE_TARGET}"
                     withSonarQubeEnv('SonarCloud') {
                         sh '''
-                        pushd userprofile-core
-                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_user-profile_core -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}
+                        pushd ${{values.component_id}}-server
+                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_${{values.component_id}}_server -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}
                         popd '''
                         sh'''
-                        pushd userprofile-client
-                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_user-profile_client -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}
+                        pushd ${{values.component_id}}-client
+                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_${{values.component_id}}_client -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.pullrequest.key=${CHANGE_ID} -Dsonar.pullrequest.branch=${CHANGE_BRANCH} -Dsonar.pullrequest.base=${CHANGE_TARGET}
                         popd '''
                     }
                     timeout(time: 10, unit: 'MINUTES') {
@@ -140,12 +140,12 @@ pipeline {
                 } else if(env.IS_COMMIT_TRUNK == 'true'){
                     withSonarQubeEnv('SonarCloud') {
                         sh '''
-                        pushd userprofile-core
-                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_user-profile_core -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.branch.name=master
+                        pushd ${{values.component_id}}-server
+                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_${{values.component_id}}_server -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.branch.name=master
                         popd'''
                         sh'''
-                        pushd userprofile-client
-                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_user-profile_client -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.branch.name=master
+                        pushd ${{values.component_id}}-client
+                        mvn ${MVN_SETTING} sonar:sonar -Dsonar.projectKey=mediaiq_${{values.component_id}}_client -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-ut/jacoco.xml -Dsonar.branch.name=master
                         popd'''
                     }
                 }
@@ -175,7 +175,7 @@ pipeline {
                        sh '''
                        echo 'Running coverage script'
                        '''
-                       common.automation_test_count_coverage("user-profile")
+                       common.automation_test_count_coverage("${{values.destination.repo}}")
                        }
                     }
                 }
@@ -184,7 +184,7 @@ pipeline {
                 steps {
                     script {
                         def additionalArgs = '--wait '+ '--set image.tag=' + imageTag
-                        common.kube_helm3_deploy('integration', 'pt-userprofile-integration', 'userprofile', 'deployment/chart', 'eks-develop', additionalArgs)
+                        common.kube_helm3_deploy('integration', '${{values.kube_namespace}}-integration', '${{values.component_id}}', 'deployment/chart', 'eks-develop', additionalArgs)
                         runIntegrationTests('integration')
                     }
                 }
@@ -197,9 +197,9 @@ pipeline {
             script {
                 tagAndPushToProd(env.ECRURL_DEV, env.ECRURL_PROD, imageTag)
                 common.finish_release()
-                common.docs_deploy('PLATFORMSERVICES','UserProfileService','prod','wiki')
+                common.docs_deploy('${{values.owner | upper}}','${{values.component_id}}Service','prod','wiki')
                 def pomVersion = readMavenPom().getVersion()
-                deployJar("userprofile-client")
+                deployJar("${{values.component_id}}-client")
             }
         }
     }
@@ -207,17 +207,17 @@ pipeline {
   post {
     success {
       script {
-          common.trigger_downstream_deployment_metrics('platform-UserProfileService-pipeline', 'Success', env.JOB_BASE_NAME)
+          common.trigger_downstream_deployment_metrics('${{values.owner}}-${{values.component_id}}-pipeline', 'Success', env.JOB_BASE_NAME)
       }
     }
     failure {
       emailext (
-               subject: "Failed userprofile-service Deployment of job name: ${env.CURR_BRANCH_NAME}",
-               to: 'platform-techbrew-team@miqdigital.com',
+               subject: "Failed ${{values.component_id}}-service Deployment of job name: ${env.CURR_BRANCH_NAME}",
+               to: 'update with your team email',
                body: "Check console output at ${env.BUILD_URL}",
            )
       script {
-        common.trigger_downstream_deployment_metrics('platform-UserProfileService-pipeline', 'Failed', env.JOB_BASE_NAME)
+        common.trigger_downstream_deployment_metrics('${{values.owner}}-${{values.component_id}}-pipeline', 'Failed', env.JOB_BASE_NAME)
       }
     }
     always {
@@ -225,12 +225,12 @@ pipeline {
     }
     unstable {
       emailext (
-               subject: "Failed userprofile-service Deployment of ${env.CURR_BRANCH_NAME}",
-               to: 'platform-techbrew-team@miqdigital.com',
+               subject: "Failed ${{values.component_id}}-service Deployment of ${env.CURR_BRANCH_NAME}",
+               to: 'update with your team email',
                body: "Check console output at ${env.BUILD_URL}",
            )
       script {
-        common.trigger_downstream_deployment_metrics('platform-UserProfile-pipeline', 'Failed', env.JOB_BASE_NAME)
+        common.trigger_downstream_deployment_metrics('${{values.owner}}-${{values.component_id}}-pipeline', 'Failed', env.JOB_BASE_NAME)
       }
     }
   }

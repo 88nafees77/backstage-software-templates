@@ -175,7 +175,7 @@ pipeline {
                        sh '''
                        echo 'Running coverage script'
                        '''
-                       common.automation_test_count_coverage("${{values.destination.repo}}")
+                       common.automation_test_count_coverage("${{values.component_id}}")
                        }
                     }
                 }

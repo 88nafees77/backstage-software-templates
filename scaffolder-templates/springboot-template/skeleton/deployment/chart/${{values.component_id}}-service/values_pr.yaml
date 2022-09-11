@@ -1,0 +1,64 @@
+replicaCount: 2
+
+image:
+  repository: 836079437595.dkr.ecr.us-east-1.amazonaws.com/${{values.ecr_repo_name}}
+  tag: ${{values.component_id}}-service
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 2Gi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "${{values.http_port}}"
+  prometheus.io/path: "/actuator/prometheus"
+  prometheus.io/team: "${{values.owner | upper}}"
+  prometheus.io/product: "${{values.component_id | upper}}_PRODUCT"
+  prometheus.io/service: "${{values.component_id | upper}}_SERVICE"
+  prometheus.io/env: "PR"
+  vault.hashicorp.com/agent-pre-populate-only: "true"
+  vault.hashicorp.com/auth-path: "auth/kubernetes"
+  vault.hashicorp.com/role: "${{values.vault_pre_prod_role}}"
+  vault.hashicorp.com/agent-inject-secret-secrets.properties: "${{values.vault_secret_folder_name}}/data/${{values.vault_secret_file_name}}-pr"
+  vault.hashicorp.com/agent-inject-template-secrets.properties: |
+    {{- with secret "${{values.vault_secret_folder_name}}/data/${{values.vault_secret_file_name}}-pr" }}
+      {{ range $k, $v := .Data.data }}
+      {{- $k }}={{ $v }}
+      {{ end }}
+    {{- end }}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/instance
+            operator: In
+            values:
+              - ${{values.component_id}}-pr
+        topologyKey: "failure-domain.beta.kubernetes.io/zone"
+
+timestamp: A100
+
+config:
+  spring:
+    application:
+      name: ${{values.component_id}}-service-pr

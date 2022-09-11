@@ -12,58 +12,123 @@ spec:
   type: service
 
   parameters:
-    - title: Provide some simple information
+    - title: Project Metadata
       required:
         - component_id
         - owner
-        - java_package_name
       properties:
         component_id:
-          title: Name
+          title: Project Name
           type: string
           description: Unique name of the component
           ui:field: EntityNamePicker
-        java_package_name:
-          title: Java Package Name
+        group_id:
+          title: Group ID
           type: string
-          description: Name for the java package. eg (io.backstage.blah)
-        kube_namespace:
-          title: Kubernetes Namespace
-          type: string
-          description: Enter your kube namespace, *dont include Env name with namespace*
-          ui:field: EntityNamePicker
-        vault_role:
-          title: Vault Role
-          type: string
-          description: Enter value for vault.hashicorp.com/role
-          ui:field: EntityNamePicker
-        vault_secret_folder_name:
-          title: Vault Secret Folder Name
-          type: string
-          description: Enter value for vault.hashicorp.com/agent-inject-secret-secrets.properties, eg (Platform-Vault-Kubernetes)
-          ui:field: EntityNamePicker
-        vault_secret_file_name:
-          title: Vault Secret File Name
-          type: string
-          description: Enter value for vault.hashicorp.com/agent-inject-secret-secrets.properties, *contact devops teams to create the same on vault*
-          ui:field: EntityNamePicker
-        aws_role:
-          title: AWS Role
-          type: string
-          description: Enter value for iam.amazonaws.com/role
-          ui:field: EntityNamePicker
+          description: Name for the java package. eg (com.miq)
+        #        java_package_name:
+        #          title: Java Package Name
+        #          type: string
+        #          description: Name for the java package. eg (io.backstage.blah)
         description:
-          title: Description
+          title: Project Description
           type: string
           description: Help others understand what this website is for.
         owner:
-          title: Owner
+          title: Project Owner
           type: string
           description: Owner of the component
           ui:field: OwnerPicker
           ui:options:
             allowedKinds:
               - Group
+    - title: Kube integration
+      required: [ ]
+      properties:
+        kube_integration_namespace:
+          title: Kubernetes Integration Namespace Name
+          type: string
+          description: Enter your kube namespace for integration
+          ui:field: EntityNamePicker
+        kube_production_namespace:
+          title: Kubernetes Production Namespace Name
+          type: string
+          description: Enter your kube namespace for production
+          ui:field: EntityNamePicker
+        kube_pre_prod_namespace:
+          title: Kubernetes Pre-prod Namespace Name
+          type: string
+          description: Enter your kube namespace for pr
+          ui:field: EntityNamePicker
+    - title: Vault integration
+      required: [ ]
+      properties:
+        vault:
+          type: string
+          title: Do you want to integrate vault in your application?
+          description: Vault Integration
+          default: No
+          enum:
+            - Yes
+            - No
+      dependencies:
+        vault:
+          oneOf:
+            - properties:
+                vault:
+                  enum:
+                    - Yes
+                vault_integration_role:
+                  title: Vault Role For Integration Env
+                  type: string
+                  description: Enter value for vault.hashicorp.com/role
+                vault_production_role:
+                  title: Vault Role For Production Env
+                  type: string
+                  description: Enter value for vault.hashicorp.com/role
+                vault_pre_prod_role:
+                  title: Vault Role For Pre-prod Env
+                  type: string
+                  description: Enter value for vault.hashicorp.com/role
+                vault_secret_folder_name:
+                  title: Vault Secret Folder Name
+                  type: string
+                  description: Enter value for vault.hashicorp.com/agent-inject-secret-secrets.properties, eg (Platform-Vault-Kubernetes)
+                vault_secret_file_name:
+                  title: Vault Secret File Name
+                  type: string
+                  description: Enter value for vault.hashicorp.com/agent-inject-secret-secrets.properties, *contact devops teams to create the same on vault*
+            - properties:
+                vault:
+                  enum:
+                    - No
+    - title: Project notification informations
+      required: [ ]
+      properties:
+        team_name:
+          title: Team Name
+          type: string
+          description: Enter Team Name eg (Tech Brew)
+        cmr_assignee_name:
+          title: Assignee Name
+          type: string
+          description: Enter Assignee Name eg (rohit)
+          ui:field: EntityNamePicker
+        team_email:
+          title: Team Email
+          type: string
+          description: Enter your Team Email
+          ui:field: EntityNamePicker
+        slack_build_notify_channel_name:
+          title: Notify Slack Channel Name for Build Status
+          type: string
+          description: Enter your Team's Slack Channel Name for Build Status eg (#hub-tech)
+          ui:field: EntityNamePicker
+        slack_cmr_notify_channel_name:
+          title: Notify Slack Channel Name for CMR Creation
+          type: string
+          description: Enter your Team's Slack Channel Name for CMR Creation eg (#hub-tech)
+          ui:field: EntityNamePicker
     - title: Choose a location
       required:
         - repoUrl
@@ -88,21 +153,32 @@ spec:
           component_id: ${{ parameters.component_id }}
           description: ${{ parameters.description }}
           artifact_id: ${{ parameters.component_id }}
-          java_package_name: ${{ parameters.java_package_name }}
-          owner: ${{ parameters.owner }}
+          #          java_package_name: ${{ parameters.java_package_name }}
+          team_name: ${{ parameters.team_name }}
+          project_key: ${{ parameters.project_key }}
+          group_id: ${{ parameters.group_id }}
+          http_port: 8080
           destination: ${{ parameters.repoUrl | parseRepoUrl }}
-          kube_namespace: ${{ parameters.kube_namespace }}
-          vault_role: ${{ parameters.vault_role }}
+          kube_integration_namespace: ${{ parameters.kube_integration_namespace }}
+          kube_production_namespace: ${{ parameters.kube_production_namespace }}
+          kube_pre-prod_namespace: ${{ parameters.kube_pre-prod_namespace }}
+          vault_integration_role: ${{ parameters.vault_integration_role }}
+          vault_production_role: ${{ parameters.vault_production_role }}
+          vault_pre_prod_role: ${{ parameters.vault_pre_prod_role }}
           vault_secret_folder_name: ${{ parameters.vault_secret_folder_name }}
           vault_secret_file_name: ${{ parameters.vault_secret_file_name }}
-          aws_role: ${{ parameters.aws_role }}
-          http_port: 8080
+          team_email: ${{ parameters.team_email }}
+          slack_build_notify_channel_name: ${{ parameters.slack_build_notify_channel_name }}
+          slack_cmr_notify_channel_name: ${{ parameters.slack_cmr_notify_channel_name }}
+          cmr_assignee_name: ${{ parameters.cmr_assignee_name }}
+          owner: ${{ parameters.owner }}
+          vault: ${{ parameters.vault }}
 
     - id: publish
       name: Publish
       action: publish:bitbucket
       input:
-        allowedHosts: ["bitbucket.org"]
+        allowedHosts: [ "bitbucket.org" ]
         description: This is ${{ parameters.component_id }}
         repoUrl: ${{ parameters.repoUrl }}
 

@@ -4,189 +4,293 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.7.1</version>
-  </parent>
+  <modules>
+    <module>${{values.component_id}}-integration-test</module>
+    <module>${{values.component_id}}-service</module>
+  </modules>
 
-  <groupId>com.miq</groupId>
+  <groupId>${{values.group_id}}</groupId>
   <artifactId>${{values.artifact_id}}</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
-
   <name>${{values.artifact_id}}</name>
   <description>${{values.description}}</description>
 
   <properties>
-    <java.version>11</java.version>
-    <maven.compiler.release>${java.version}</maven.compiler.release>
-    <maven.compiler.source>${java.version}</maven.compiler.source>
-    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <java.version>17</java.version>
+    <jdk.version>17</jdk.version>
+    <spring.boot.version>2.7.1</spring.boot.version>
+    <maven.compiler.version>3.8.1</maven.compiler.version>
+    <maven.surefire.version>3.0.0-M5</maven.surefire.version>
+    <maven.assembly.version>3.3.0</maven.assembly.version>
+    <junit.version>4.13.2</junit.version>
+    <jacoco.maven.plugin.version>0.8.8</jacoco.maven.plugin.version>
+    <lombok.version>1.18.20</lombok.version>
+    <jackson.version>2.13.2</jackson.version>
+    <validation-api.version>2.0.1.Final</validation-api.version>
+    <aggregate.report.dir>target/site/jacoco-ut/jacoco.xml</aggregate.report.dir>
+    <sonar.organization>mediaiq</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <junit.vintage.version>5.8.2</junit.vintage.version>
+    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/${aggregate.report.dir}
+    </sonar.coverage.jacoco.xmlReportPaths>
+    <main.class>com.mediaiq.caps.platform.ServerStarUp</main.class>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <release.tag/>
+    <build.number/>
   </properties>
+  <scm>
+    <connection>scm:git:ssh://git@bitbucket.org/mediaiq/${{values.destination.repo}}.git
+    </connection>
+    <tag>${{values.component_id}}-service-${project.version}</tag>
+  </scm>
 
-  <modules>
-    <module>${{values.component_id}}-client</module>
-    <module>${{values.component_id}}-common</module>
-    <module>${{values.component_id}}-integration-test</module>
-    <module>${{values.component_id}}-server</module>
-  </modules>
-
-  <repositories>
-    <repository>
-      <id>jcenter</id>
-      <url>https://jcenter.bintray.com/</url>
-    </repository>
-  </repositories>
-  <dependencies>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>io.micrometer</groupId>
-      <artifactId>micrometer-core</artifactId>
-    </dependency>
-    <!-- Micrometer Prometheus registry  -->
-    <dependency>
-      <groupId>io.micrometer</groupId>
-      <artifactId>micrometer-registry-prometheus</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-actuator</artifactId>
-    </dependency>
-
-    <dependency> <!-- necessary for Java 9+ -->
-      <groupId>org.apache.tomcat</groupId>
-      <artifactId>annotations-api</artifactId>
-      <version>6.0.53</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <version>${junit.vintage.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
 
   <build>
-    <finalName>${project.artifactId}</finalName>
-    <extensions>
-      <extension>
-        <groupId>kr.motd.maven</groupId>
-        <artifactId>os-maven-plugin</artifactId>
-        <version>1.4.0.Final</version>
-      </extension>
-    </extensions>
-    <plugins>
-      <!-- Compiler Configuration -->
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
-        <configuration>
-          <showWarnings>true</showWarnings>
-          <forceJavacCompilerUse>true</forceJavacCompilerUse>
-          <compilerArgs>
-            <arg>-Xlint:all</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
-      <!-- Testing Configuration -->
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.22.2</version>
-        <configuration>
-          <includes>
-            <include>**/*IT.java</include>
-            <include>**/integrationtests/*.java</include>
-            <include>**/it/**/*.java</include>
-          </includes>
-        </configuration>
-      </plugin>
+    <sourceDirectory>src/main/java</sourceDirectory>
+    <testSourceDirectory>src/test/java</testSourceDirectory>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven.compiler.version}</version>
+          <configuration>
+            <source>${jdk.version}</source>
+            <target>${jdk.version}</target>
+          </configuration>
+          <executions>
+            <execution>
+              <id>default-compile</id>
+              <phase>none</phase>
+            </execution>
+            <execution>
+              <id>default-testCompile</id>
+              <phase>none</phase>
+            </execution>
+            <execution>
+              <id>java-compile</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>java-test-compile</id>
+              <phase>test-compile</phase>
+              <goals>
+                <goal>testCompile</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>1.6.8</version>
+          <executions>
+            <execution>
+              <id>default-deploy</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>deploy</goal>
+              </goals>
+            </execution>
+          </executions>
+          <!--          update your nexus remove or remove this confg if you dont want to use nexus-->
+          <configuration>
+            <serverId>nexus</serverId>
+            <nexusUrl></nexusUrl>
+            <skipStaging>true</skipStaging>
+          </configuration>
+        </plugin>
 
-      <!-- Quality Configuration -->
+        <plugin> <!-- builds a runnable jar with main class -->
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring.boot.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.0.0</version>
+          <executions>
+            <execution>
+              <id>ecr-login</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>exec</goal>
+              </goals>
+              <configuration>
+                <!--'rootDirectory' variable is exposed by the directory-maven-plugin-->
+                <executable>${rootDirectory}/../deployment/scripts/ecr-login.sh
+                </executable>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <!--This plugin is responsible for building the docker image in the install phase-->
+        <!--and pushing it to ecr repository in deploy phase. It uses the Dockerfile provided-->
+        <!--alongside the pom in the project. You need to have docker installed to use this-->
+        <plugin>
+          <groupId>com.spotify</groupId>
+          <artifactId>dockerfile-maven-plugin</artifactId>
+          <version>1.4.13</version>
+          <dependencies>
+            <dependency>
+              <groupId>javax.activation</groupId>
+              <artifactId>activation</artifactId>
+              <version>1.1.1</version>
+            </dependency>
+          </dependencies>
+          <executions>
+            <execution>
+              <id>default</id>
+              <goals>
+                <goal>build</goal>
+                <goal>push</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <repository>836079437595.dkr.ecr.us-east-1.amazonaws.com/${{values.ecr_repo_name}}
+            </repository>
+            <tag>${project.artifactId}-${release.tag}${build.number}</tag>
+            <buildArgs>
+              <JAR_FILE>
+                ${project.artifactId}-${project.version}-jar-with-dependencies.jar
+              </JAR_FILE>
+            </buildArgs>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>io.fabric8</groupId>
+          <artifactId>docker-maven-plugin</artifactId>
+          <version>0.38.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.maven.plugin.version}</version>
+          <executions>
+            <execution>
+              <id>pre-unit-test</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+              <configuration>
+                <destFile>
+                  ${project.build.directory}/coverage-reports/jacoco-ut.exec
+                </destFile>
+                <propertyName>surefireArgLine</propertyName>
+              </configuration>
+            </execution>
+            <execution>
+              <id>post-unit-test</id>
+              <phase>test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+              <configuration>
+                <dataFile>
+                  ${project.build.directory}/coverage-reports/jacoco-ut.exec
+                </dataFile>
+                <outputDirectory>${project.reporting.outputDirectory}/jacoco-ut
+                </outputDirectory>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <!-- User for unit tests-->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven.surefire.version}</version>
+          <configuration>
+            <argLine>
+              ${surefireArgLine}
+            </argLine>
+            <excludes>
+              <exclude>**/*/RunnerTest.java</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <!--This plugin will get the root directory of project and expose it in the variable 'rootDirectory'-->
       <plugin>
-        <groupId>com.coveo</groupId>
-        <artifactId>fmt-maven-plugin</artifactId>
-        <version>2.8</version>
+        <groupId>org.commonjava.maven.plugins</groupId>
+        <artifactId>directory-maven-plugin</artifactId>
+        <version>1.0</version>
         <executions>
           <execution>
+            <id>directories</id>
             <goals>
-              <goal>format</goal>
+              <goal>directory-of</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.5</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>prepare-agent</goal>
-              <goal>report</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>enforce</id>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
+            <phase>initialize</phase>
             <configuration>
-              <rules>
-                <requireUpperBoundDeps/>
-              </rules>
+              <property>rootDirectory</property>
+              <project>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>${project.artifactId}</artifactId>
+              </project>
             </configuration>
           </execution>
         </executions>
       </plugin>
-
       <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <addMavenDescriptor>true</addMavenDescriptor>
-            <manifest>
-              <mainClass>${start-class}</mainClass>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
-            <manifestEntries>
-              <Implementation-Version>
-                ${project.version}-${buildTimestamp}-${buildNumber}
-              </Implementation-Version>
-            </manifestEntries>
-          </archive>
-        </configuration>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>test</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${basedir}/src/main</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
-      <plugin>
+      <plugin> <!-- builds a runnable jar with main class -->
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>build-info</id>
             <goals>
-              <goal>build-info</goal>
+              <goal>repackage</goal>
             </goals>
+            <configuration>
+              <classifier>jar-with-dependencies</classifier>
+              <mainClass>${main.class}</mainClass>
+            </configuration>
           </execution>
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
+        <version>3.2.1</version>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -197,10 +301,9 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <show>private</show>
-        </configuration>
+        <version>3.3.1</version>
         <executions>
           <execution>
             <id>attach-javadocs</id>
@@ -209,6 +312,14 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <failOnError>false</failOnError>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
